@@ -1,21 +1,50 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  const data = await chrome.storage.local.get(['summary', 'isLoading']);
+  const data = await chrome.storage.local.get(['summary', 'isLoading', 'selectedModel']);
+  const modelSelector = document.getElementById("modelSelector");
+
+  // get choice from user or default to gemini
+  const currentModel = data.selectedModel || 'gemini';
+  modelSelector.value = currentModel;
   
+  // restore UI state
   if (data.isLoading) {
     showLoadingState();
   } else if (data.summary) {
     renderMarkdown(data.summary);
   }
+  if (!data.summary) {
+    hideCopyButton(); 
+  }
+
+  modelSelector.addEventListener('change', (event) => {
+    chrome.storage.local.set({ selectedModel: event.target.value });
+  });
 });
+
+
 
 // the main summarize function
 document.getElementById("summarizeBtn").addEventListener("click", async () => {
   const outputDiv = document.getElementById("output");
+  let modelData;
+  let selectedModel;
 
   try {
     showLoadingState();
     // Save state so if popup closes, we know we are working
     await chrome.storage.local.set({ isLoading: true, summary: "" });
+
+    modelData = await chrome.storage.local.get('selectedModel');
+    selectedModel = modelData.selectedModel || 'gemini';
+    let apiUrl = "";
+    if (selectedModel === 'gemini') {
+      apiUrl = "https://my-gemini-proxy-one.vercel.app/api/summarize";
+    } else if (selectedModel === 'chatgpt_api') {
+      // Assuming a different proxy endpoint for the ChatGPT API
+      apiUrl = "https://my-chatgpt-proxy.vercel.app/api/index"; 
+    } else {
+        throw new Error("Invalid AI model selected.");
+    }
 
     // 1. Get the current active tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -34,8 +63,6 @@ document.getElementById("summarizeBtn").addEventListener("click", async () => {
     const cleanText = result.length > MAX_LENGTH 
       ? result.substring(0, MAX_LENGTH) + "... [Content Truncated]" 
       : result;
-
-    const apiUrl = "https://my-gemini-proxy-one.vercel.app/api/summarize"; 
     
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -49,8 +76,23 @@ document.getElementById("summarizeBtn").addEventListener("click", async () => {
 
     const data = await response.json();
 
-    await chrome.storage.local.set({ isLoading: false, summary: data.text });
-    renderMarkdown(data.text);
+    let summaryText;
+    if (selectedModel === 'gemini') {
+        summaryText = data.reply;
+    } else if (selectedModel === 'chatgpt_api') {
+        summaryText = data.text || data.output || data.message;
+    }
+
+    if (!summaryText) {
+        summaryText = data.reply || data.text || data.summary || data.content;
+    }
+
+    if (!summaryText || typeof summaryText !== 'string') {
+        throw new Error("API response is invalid or missing summary text.");
+    }
+
+    await chrome.storage.local.set({ isLoading: false, summaryText });
+    renderMarkdown(summaryText);
 
   } catch (error) {
     // 2. Show error in the UI so you know what happened
@@ -89,6 +131,7 @@ function showLoadingState() {
   btn.disabled = true;
   btn.innerText = "Summarizing...";
   outputDiv.innerHTML = '<div class="spinner"></div> Thinking...';
+  hideCopyButton();
 }
 
 function resetButton() {
@@ -100,6 +143,7 @@ function resetButton() {
 function renderMarkdown(text) {
   document.getElementById("output").innerHTML = marked.parse(text);
   resetButton();
+  showCopyButton();
 }
 
 function extractPageContent() {
@@ -132,4 +176,12 @@ function extractPageContent() {
   .replace(/\n+/g, '\n') // Normalize newlines
   .replace(/\s+/g, ' ')  // Normalize spaces
   .trim();
+}
+
+function showCopyButton() {
+  document.getElementById("copyBtn").style.display = "block";
+}
+
+function hideCopyButton() {
+  document.getElementById("copyBtn").style.display = "none";
 }

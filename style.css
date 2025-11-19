@@ -115,3 +115,28 @@ button:disabled {
     background-color: #f2f2f2;
     font-weight: bold;
 }
+
+.settings-container {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+}
+
+.settings-container label {
+    font-size: 13px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+#modelSelector {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Include padding in the element's total width and height */
+    font-size: 14px;
+}

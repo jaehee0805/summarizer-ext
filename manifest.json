@@ -4,7 +4,8 @@
   "version": "1.1",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": [
-    "https://my-gemini-proxy-one.vercel.app/*"
+    "https://my-gemini-proxy-one.vercel.app/*",
+    "https://my-chatgpt-proxy.vercel.app/*"
   ],
   "action": {
     "default_popup": "popup.html"
