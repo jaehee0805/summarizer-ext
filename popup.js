@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// the main summarize function
 document.getElementById("summarizeBtn").addEventListener("click", async () => {
   const outputDiv = document.getElementById("output");
 
@@ -60,6 +61,28 @@ document.getElementById("summarizeBtn").addEventListener("click", async () => {
   }
 });
 
+// Copy to Clipboard
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const outputDiv = document.getElementById("output");
+  const copyBtn = document.getElementById("copyBtn");
+  
+  // Get the plain text of the summary
+  const textToCopy = outputDiv.innerText;
+
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    // Visual Feedback
+    const originalText = copyBtn.innerText;
+    copyBtn.innerText = "Copied!";
+    copyBtn.style.background = "#28a745"; // Green success color
+    
+    setTimeout(() => {
+      copyBtn.innerText = originalText;
+      copyBtn.style.background = "#6c757d"; // Revert to grey
+    }, 2000);
+  });
+});
+
+// Helper Functions
 function showLoadingState() {
   const btn = document.getElementById("summarizeBtn");
   const outputDiv = document.getElementById("output");
